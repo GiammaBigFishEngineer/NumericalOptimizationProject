@@ -4,7 +4,7 @@ from BroydenTridiagonal import BroydenTridiagonal
 from OptimizationClass import OptimizationClass
 
 # --- Setup Problem ---
-n = 10**3
+n = 10**4
 problem = BroydenTridiagonal(n)
 
 def generate_starting_points(problem, num_random=5):
@@ -35,7 +35,7 @@ optimizer = OptimizationClass()
 # --- Parameters ---
 tol = 1e-7
 max_iter = 500
-h = 10**(-12)
+h = 10**(-8)
 
 print(f"--- Start Comparison (n={n}, h={h}) ---")
 
@@ -60,7 +60,7 @@ print("\nRunning Truncated Newton (Full FD Hessian)...")
 xk_tn, k_tn, grad_norm_tn, history_tn = optimizer.truncated_newton_method(
     problem.F,
     problem.F_gradient,
-    problem.F_hessian_product_from_full_matrix, # <--- Passing the wrapper function here
+    hessian_matrix_func, # <--- Passing the wrapper function here
     x0,
     max_iter,
     tol
