@@ -12,6 +12,7 @@ def plot_execution_time(csv_filename="final_results.csv"):
     - Creates a folder 'plots_time'
     - Generates one PNG file per Dimension (n) and Step (h).
     - Each chart shows time bars for MN and TN for every starting point.
+    - **NOTE:** Only plots the time if the method Converged.
     """
     
     print(f"--- Loading data from {csv_filename} ---")
@@ -64,19 +65,27 @@ def plot_execution_time(csv_filename="final_results.csv"):
                 p_name = "Suggested" if x0_idx == 0 else f"Rand {x0_idx}"
                 start_points.append(p_name)
                 
-                # Modified Newton Time
+                # --- Modified Newton Time ---
                 mn_row = row_data[row_data['method'].str.contains("MN")]
                 if not mn_row.empty:
-                    times_mn.append(mn_row.iloc[0]['time_sec'])
+                    # CHECK CONVERGENCE
+                    if mn_row.iloc[0]['converged']:
+                        times_mn.append(mn_row.iloc[0]['time_sec'])
+                    else:
+                        times_mn.append(0) # Did not converge -> No bar
                 else:
-                    times_mn.append(0) # No data
+                    times_mn.append(0) 
 
-                # Truncated Newton Time
+                # --- Truncated Newton Time ---
                 tn_row = row_data[row_data['method'].str.contains("TN")]
                 if not tn_row.empty:
-                    times_tn.append(tn_row.iloc[0]['time_sec'])
+                    # CHECK CONVERGENCE
+                    if tn_row.iloc[0]['converged']:
+                        times_tn.append(tn_row.iloc[0]['time_sec'])
+                    else:
+                        times_tn.append(0) # Did not converge -> No bar
                 else:
-                    times_tn.append(0) # No data
+                    times_tn.append(0) 
 
             # --- Create Bar Chart ---
             plt.figure(figsize=(10, 6))
@@ -92,16 +101,12 @@ def plot_execution_time(csv_filename="final_results.csv"):
             # Labels and Titles
             plt.xlabel('Starting Point')
             plt.ylabel('Execution Time (seconds)')
-            plt.title(f'Time Comparison | Dimension n={n} | h={h_label}')
+            plt.title(f'Time Comparison (Converged Only) | n={n} | h={h_label}')
             plt.xticks(x, start_points)
             plt.legend()
             
             # Add a light horizontal grid
             plt.grid(axis='y', linestyle='--', alpha=0.4)
-
-            # Optional: Add values on top of bars
-            # If the difference is huge (e.g. 40s vs 0.1s), consider log scale:
-            # plt.yscale('log') # Uncomment if you want logarithmic scale
 
             plt.tight_layout()
             

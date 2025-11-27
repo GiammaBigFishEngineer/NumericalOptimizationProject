@@ -4,6 +4,10 @@ import time
 from BandedTrigonometric import BandedTrigonometric
 from OptimizationClass import OptimizationClass
 
+student_ids = [361083, 360078]
+MIN_STUDENT_ID = min(student_ids) 
+np.random.seed(MIN_STUDENT_ID)
+
 def generate_starting_points(problem, num_random=5):
     """
     Generates the suggested starting point and 5 random points 
