@@ -4,7 +4,7 @@ from BroydenTridiagonal import BroydenTridiagonal
 from OptimizationClass import OptimizationClass
 
 # --- Setup Problem ---
-n = 10**4
+n = 10**3
 problem = BroydenTridiagonal(n)
 
 def generate_starting_points(problem, num_random=5):
