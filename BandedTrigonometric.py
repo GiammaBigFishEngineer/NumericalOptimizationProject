@@ -122,7 +122,7 @@ class BandedTrigonometric(ProblemBase):
         
         return H
     
-    def F_hessian_approx_full(self, x: np.ndarray, h: float) -> sp.spmatrix:
+    def F_hessian_approx(self, x: np.ndarray, h: float) -> sp.spmatrix:
         """
         Calculates the FULL approximate Hessian matrix using finite differences
         optimized with GRAPH COLORING (grouping).

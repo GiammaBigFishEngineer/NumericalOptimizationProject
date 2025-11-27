@@ -68,7 +68,7 @@ class ProblemBase(ABC):
         return H @ v
     
     @abstractmethod
-    def F_hessian_approx_full(self, x: np.ndarray, h: float) -> np.ndarray:
+    def F_hessian_approx(self, x: np.ndarray, h: float) -> np.ndarray:
         """
         Calculates the FULL approximate Hessian matrix using finite differences
         optimized with GRAPH COLORING (grouping).
