@@ -1,9 +1,0 @@
-1 - classe per problema 31 (starting point, function, gradient, Hessian)
-2 - classe per problema 26 (starting point, function, gradient, Hessian)
-3 - Back Tracking class
-4 -  Unconstrained Class (extend Back Tracking class)
-5 - Modified Newton method
-6 - Truncated Newton method
-7 - Evaluation method inside unconstrained class for different parameters and x0
-8 - write the report in latex (remember to write derivates of function in preliminary)
-
