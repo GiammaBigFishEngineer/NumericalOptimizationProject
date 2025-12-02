@@ -14,21 +14,89 @@ def generate_starting_points(problem, num_random=5):
     within the hypercube [x_bar-1, x_bar+1]. 
     """
     x_bar = problem.get_starting_point()
-    points = [x_bar] # The first point is the standard suggestion
+    points = [x_bar] 
     
-    # Generate random uniform points
     for _ in range(num_random):
         random_perturbation = np.random.uniform(-1, 1, size=problem.n)
         x_rnd = x_bar + random_perturbation
         points.append(x_rnd)
         
     return points
+
+def calculate_convergence_order(history):
+    """
+    Calculates the Empirical Order of Convergence (p) based on the 
+    last few iterations.
     
+    Returns:
+        float: The estimated order p (e.g., 1.0 for linear, 2.0 for quadratic).
+        Returns np.nan if there is insufficient history.
+    """
+    # We need at least 3 data points to calculate one p value
+    # history contains [norm_0, norm_1, ... norm_k]
+    if len(history) < 3:
+        return np.nan
+    
+    # Take the last few iterations (e.g., last 5 steps) to get the trend
+    # We slice to avoid the very beginning where behavior is erratic
+    norms = np.array(history)
+    
+    # Filter out zeros to avoid log(0) errors if it converged perfectly to 0
+    norms = norms[norms > 1e-16]
+    
+    if len(norms) < 3:
+        return np.nan
+
+    p_values = []
+    
+    # Calculate p for the sequence
+    for k in range(len(norms) - 2):
+        e_k = norms[k]
+        e_kp1 = norms[k+1]
+        e_kp2 = norms[k+2]
+        
+        # Avoid division by zero or log(1) (which makes denominator 0)
+        try:
+            numerator = np.log(e_kp2 / e_kp1)
+            denominator = np.log(e_kp1 / e_k)
+            
+            if abs(denominator) > 1e-8: # Avoid division by extremely small numbers
+                p = numerator / denominator
+                p_values.append(p)
+        except:
+            continue
+            
+    if not p_values:
+        return np.nan
+
+    # Return the average of the last few calculated orders
+    # We focus on the end of the optimization process
+    return np.mean(p_values[-3:])
+
+def get_convergence_label(rate):
+    """
+    Classified rate of convergence labels
+    """
+    if np.isnan(rate):
+        return "N/A (Too fast/Unstable)"
+    
+    if rate < 1.3:
+        return "Linear"
+    elif 1.3 <= rate < 1.8:
+        return "Superlinear"
+    else:
+        return "Quadratic"
+
 def build_row(method, xk_mn, iterations, n, x0, h, grad_norm_mn, tol, elapsed_time, history):
     """
     Helper function to create a dictionary row for the DataFrame.
-    Now includes 'history' (the list of gradient norms).
     """
+    # 1. Calcola il numero
+    rate_val = calculate_convergence_order(history)
+    
+    # 2. Ottieni l'etichetta
+    rate_label = get_convergence_label(rate_val)
+    
     res = {
             "method": method,
             "xk_final": xk_mn,
@@ -39,7 +107,9 @@ def build_row(method, xk_mn, iterations, n, x0, h, grad_norm_mn, tol, elapsed_ti
             "grad_norm": grad_norm_mn,
             "converged": grad_norm_mn <= tol,
             "time_sec": elapsed_time,
-            "history": history  # <--- Added the history array here
+            "conv_rate_est": rate_val,
+            "conv_type": rate_label,
+            "history": history
         }
     return res
 
@@ -133,12 +203,11 @@ for n in n_arr:
 # --- Create and Print DataFrame ---
 df_final = pd.DataFrame(results_list)
 
-# Added "history" to the columns list
-cols = ["n", "x0_index", "method", "h", "iterations", "grad_norm", "converged", "time_sec", "history"]
+cols = ["n", "x0_index", "method", "h", "iterations", "grad_norm", "converged", "time_sec", "conv_rate_est", "conv_type", "history"]
 df_final = df_final[cols]
 
 print("\n--- Optimization Results ---")
-print(df_final)
+print(df_final.to_string())
 
-# Optional: Save to CSV
+# Save to CSV
 df_final.to_csv("final_results.csv", index=False)
