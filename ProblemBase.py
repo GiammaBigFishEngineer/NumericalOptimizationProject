@@ -49,23 +49,6 @@ class ProblemBase(ABC):
         pass
 
     # --- Finite Difference Hessian Methods (Inherited by all child classes) ---
-
-    def F_hessian_product(self, x, v, epsilon=1e-8):
-        """
-        Approssima il prodotto Hessiana-Vettore H(x) * v usando differenze finite
-        sul gradiente. Non calcola mai la matrice H esplicitamente.
-        Formula: Hv ≈ (grad(x + epsilon * v) - grad(x)) / epsilon
-        """
-        grad_x = self.F_gradient(x)
-        grad_x_eps = self.F_gradient(x + epsilon * v)
-        return (grad_x_eps - grad_x) / epsilon
-    
-    def F_hessian_product_from_full_matrix(self, x, v):
-        # 1. Calculate the FULL dense matrix (Expensive!)
-        H = self.F_hessian_approx_full(x, h=1e-5)
-        
-        # 2. Perform Matrix-Vector multiplication
-        return H @ v
     
     @abstractmethod
     def F_hessian_approx(self, x: np.ndarray, h: float) -> np.ndarray:

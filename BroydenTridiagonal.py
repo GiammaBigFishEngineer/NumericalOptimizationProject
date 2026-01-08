@@ -38,74 +38,74 @@ class BroydenTridiagonal(ProblemBase):
     
     def F_gradient(self, x):
         """
-        Calcola il Gradiente ESATTO in modo ottimizzato.
+        Computes the EXACT Gradient in an optimized manner.
         
-        Invece di costruire la matrice Jacobiana J (che è costoso),
-        calcoliamo direttamente il vettore gradiente usando la formula analitica:
+        Instead of constructing the Jacobian matrix J (which is computationally expensive),
+        we directly calculate the gradient vector using the analytical formula:
         g_i = f_i * (3 - 4x_i) - 2*f_{i-1} - f_{i+1}
         """
-        # Calcola prima il vettore dei residui f(x)
-        # (Assicurati che self.f restituisca float64 per evitare errori numerici)
+        # First, calculate the residual vector f(x)
+        # Ensure float64 precision to avoid numerical errors
         f_vec = self.f(x).astype(np.float64)
         x = x.astype(np.float64)
         
-        # Termine 1: f_i * (3 - 4x_i)
+        # Term 1: f_i * (3 - 4x_i)
         term1 = f_vec * (3.0 - 4.0 * x)
         
-        # Termine 2: -2 * f_{i-1}
-        # "f_{i-1}" è f_vec shiftato a destra (con 0 all'inizio)
+        # Term 2: -2 * f_{i-1}
+        # "f_{i-1}" is f_vec shifted right (padded with 0 at the start)
         f_prev = np.concatenate(([0.0], f_vec[:-1]))
         term2 = -2.0 * f_prev
         
-        # Termine 3: -1 * f_{i+1}
-        # "f_{i+1}" è f_vec shiftato a sinistra (con 0 alla fine)
+        # Term 3: -1 * f_{i+1}
+        # "f_{i+1}" is f_vec shifted left (padded with 0 at the end)
         f_next = np.concatenate((f_vec[1:], [0.0]))
         term3 = -1.0 * f_next
         
-        # Somma tutto
+        # Sum all components
         return term1 + term2 + term3
-    
+
     def F_hessian_exact(self, x: np.ndarray) -> sp.csc_matrix:
         """
-        Calcola l'Hessiana ESATTA in modo ottimizzato (Hard-coded).
+        Computes the EXACT Hessian in an optimized (hard-coded) manner.
         
-        Invece di costruire J e fare il prodotto matriciale J.T * J (costoso),
-        costruiamo direttamente le 5 diagonali della matrice risultante
-        usando le formule analitiche.
+        Instead of explicitly building J and performing the matrix product J.T * J,
+        we directly construct the 5 diagonals of the resulting matrix 
+        using analytical formulas.
         
-        Risultato: Una matrice pentadiagonale (5-banded).
+        Result: A pentadiagonal (5-banded) sparse matrix.
         """
         n = self.n
         x = x.astype(np.float64)
-        f_vec = self.f(x) # Serve per il secondo termine
+        f_vec = self.f(x)  # Required for the second-order term
         
-        # Termine ricorrente: D_i = (3 - 4x_i)
+        # Recurrent term: D_i = (3 - 4x_i)
         D = 3.0 - 4.0 * x
         
-        # --- 1. Diagonale Principale (Offset 0) ---
-        # Formula base: D_i^2 + 5
+        # --- 1. Main Diagonal (Offset 0) ---
+        # Base formula: D_i^2 + 5
         main_diag = D**2 + 5.0
         
-        # Correzioni ai bordi (perché J è tridiagonale finita)
-        main_diag[0] -= 4.0 # Primo elemento: D_0^2 + 1
-        main_diag[-1] -= 1.0 # Ultimo elemento: D_{n-1}^2 + 4
+        # Boundary corrections (due to the finite tridiagonal structure of J)
+        main_diag[0] -= 4.0   # First element: D_0^2 + 1
+        main_diag[-1] -= 1.0  # Last element: D_{n-1}^2 + 4
         
-        # Aggiunta del Secondo Termine (sum f_k * H_k)
-        # H_k ha solo -4 sulla diagonale
+        # Add the Second-Order Term (sum of f_k * H_k)
+        # Since H_k has only -4 on its diagonal
         main_diag -= 4.0 * f_vec
         
-        # --- 2. Diagonale 1 (Offset +1 e -1) ---
+        # --- 2. First Off-Diagonal (Offsets +1 and -1) ---
         # Formula: -2*D_i - D_{i+1}
-        # D[:-1] prende da 0 a n-2 (i)
-        # D[1:]  prende da 1 a n-1 (i+1)
+        # D[:-1] covers indices 0 to n-2 (i)
+        # D[1:]  covers indices 1 to n-1 (i+1)
         off_diag_1 = -2.0 * D[:-1] - D[1:]
         
-        # --- 3. Diagonale 2 (Offset +2 e -2) ---
-        # Formula: Costante 2
+        # --- 3. Second Off-Diagonal (Offsets +2 and -2) ---
+        # Formula: Constant 2.0
         off_diag_2 = np.full(n - 2, 2.0, dtype=np.float64)
         
-        # --- 4. Assemblaggio Matrice ---
-        # Sfruttiamo la simmetria dell'Hessiana
+        # --- 4. Matrix Assembly ---
+        # Leverage the symmetry of the Hessian
         H = sp.diags(
             [off_diag_2, off_diag_1, main_diag, off_diag_1, off_diag_2],
             [-2, -1, 0, 1, 2],
